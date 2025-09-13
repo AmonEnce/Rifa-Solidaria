@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Rifa Solidária - João Gaspar</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background: #ff6b6b;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        main {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #444;
+        }
+
+        .info {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .premios {
+            background: #f9f9f9;
+            border-left: 4px solid #ff6b6b;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+
+        /* Grid dos números com scroll reduzido */
+        #numeros {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+            gap: 6px;
+            margin-bottom: 15px;
+            max-height: 300px;
+            /* menor altura para caber o formulário e PIX */
+            overflow-y: scroll;
+            padding-right: 5px;
+        }
+
+        #numeros button {
+            padding: 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #eee;
+            transition: all 0.2s;
+        }
+
+        #numeros button:hover:not(:disabled) {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        #numeros button.selected {
+            border: 2px solid #28a745;
+            background: #d4edda;
+        }
+
+        #numeros button:disabled {
+            background: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .form-box {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fdfdfd;
+            margin-bottom: 15px;
+        }
+
+        input {
+            display: block;
+            width: 97%;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        button.reservar {
+            background: #28a745;
+            color: white;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button.reservar:hover {
+            background: #218838;
+        }
+
+        .pix-box {
+            background: #fff3cd;
+            padding: 15px;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Rifa Solidária: Vamos Ajudar João Gaspar da Silva!</h1>
+    </header>
+
+    <main>
+        <div class="info">
+            <p>Amigos e familiares se uniram para realizar uma <strong>rifa solidária</strong> com o objetivo de ajudar
+                a custear a cirurgia de <strong>João Gaspar da Silva</strong>.</p>
+        </div>
+
+        <div class="premios">
+            <h2>Prêmios 🎁</h2>
+            <p><strong>Valor de cada número:</strong> R$10,00</p>
+            <ul>
+                <li>1º Prêmio: R$ 500,00</li>
+                <li>2º Prêmio: R$ 200,00</li>
+                <li>3º Prêmio: R$ 100,00</li>
+            </ul>
+        </div>
+
+        <h2>Escolha seus números:</h2>
+        <div id="numeros"></div>
+
+        <div class="form-box">
+            <h3>Seus dados</h3>
+            <input type="text" id="nome" placeholder="Seu nome">
+            <input type="text" id="telefone" placeholder="Telefone">
+            <button class="reservar" onclick="reservar()">Reservar Números Selecionados</button>
+        </div>
+
+        <div class="pix-box">
+            <h3>Forma de pagamento</h3>
+            <p>Após reservar seus números, faça o pagamento via <strong>PIX</strong> e envie o comprovante para o
+                organizador.</p>
+            <p><strong>Chave PIX:</strong> <span style="color:#d9534f;">__________________________</span></p>
+        </div>
+    </main>
+
+    <footer>
+        © 2025 Rifa Solidária • Feita com ❤️ para ajudar João Gaspar
+    </footer>
+
+    <script src="js/rifa.js"></script>
+</body>
+</html>
