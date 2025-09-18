@@ -6,6 +6,9 @@
     <title>Rifa Solidária - João Gaspar</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
@@ -105,7 +108,8 @@
             margin-bottom: 15px;
         }
 
-        input {
+        input,
+        select {
             display: block;
             width: 97%;
             margin: 10px 0;
@@ -113,6 +117,10 @@
             border-radius: 6px;
             border: 1px solid #ccc;
             font-size: 14px;
+        }
+
+        select {
+            width: 97% !important;
         }
 
         button.reservar {
@@ -176,14 +184,38 @@
             <h3>Seus dados</h3>
             <input type="text" id="nome" placeholder="Seu nome">
             <input type="text" id="telefone" placeholder="Telefone">
+
+            <select id="vendedor">
+                <option value="">Selecione o vendedor</option>
+                <option value="Marcio">Marcio</option>
+                <option value="Gerson">Gerson</option>
+                <option value="Ademir">Ademir</option>
+            </select>
+
             <button class="reservar" onclick="reservar()">Reservar Números Selecionados</button>
         </div>
 
-        <div class="pix-box">
-            <h3>Forma de pagamento</h3>
+        <div class="pix-box" style="text-align: center;">
+            <h3>Pagamento</h3>
             <p>Após reservar seus números, faça o pagamento via <strong>PIX</strong> e envie o comprovante para o
-                organizador.</p>
-            <p><strong>Chave PIX:</strong> <span style="color:#d9534f;"><strong>00829772910</strong> Jaquelini Alves da Silva</span></p>
+                <br><strong>(49) 98894-5075</strong>.
+            </p>
+
+            <!-- QR Code -->
+            <div style="text-align:center; margin: 15px 0;">
+                <img src="/Rifa-Solidaria/img/QrCodePix.png" alt="QR Code PIX" width="220">
+            </div>
+            <div style="display: flex; align-items: center; flex-direction: column;">
+                <!-- PIX Copia e Cola -->
+                <textarea id="pixCopiaCola" readonly
+                    style="width:100%; height:80px; padding:8px; display: none;">00020126330014BR.GOV.BCB.PIX0111008297729105204000053039865802BR5924Jaquelini Alves da Silva6009SAO PAULO62140510Mz91idOWfi63041478</textarea>
+                <button id="copyPix"
+                    class="btn btn-info d-flex align-items-center gap-2 px-4 py-2 shadow-sm rounded-pill">
+                    <i class="bi bi-clipboard"></i>
+                    <span>Copiar PIX</span>
+                </button>
+            </div>
+
         </div>
     </main>
 
@@ -195,4 +227,3 @@
 </body>
 
 </html>
-
