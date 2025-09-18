@@ -71,6 +71,8 @@ async function reservar() {
 
     const nome = document.getElementById("nome").value.trim();
     const telefone = document.getElementById("telefone").value.trim();
+    const vendedor = document.getElementById("vendedor").value;
+
     if (!nome || !telefone) {
         Swal.fire({
             icon: 'info',
@@ -80,6 +82,17 @@ async function reservar() {
         });
 
         return
+    }
+
+    if (!vendedor) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Atenção',
+            text: 'Por favor, selecione um vendedor antes de continuar!',
+            confirmButtonText: 'OK'
+        });
+        
+        return;
     }
 
     Swal.fire({
@@ -164,3 +177,16 @@ telefoneInput.addEventListener('input', function (e) {
 
     e.target.value = v;
 });
+
+function copiarPix() {
+    const textarea = document.getElementById("pixCopiaCola");
+    textarea.select();
+    document.execCommand("copy");
+
+    const btn = event.currentTarget;
+    btn.innerHTML = '<i class="bi bi-clipboard-check"></i> Copiado!';
+
+    setTimeout(() => {
+        btn.innerHTML = '<i class="bi bi-clipboard"></i> Copiar PIX';
+    }, 2000);
+}
