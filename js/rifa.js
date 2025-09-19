@@ -178,16 +178,24 @@ telefoneInput.addEventListener('input', function (e) {
     e.target.value = v;
 });
 
-function copiarPix() {
+function copiarPix(btn) {
     const textarea = document.getElementById("pixCopiaCola");
-    textarea.select();
-    document.execCommand("copy");
+    const texto = textarea.value;
 
-    const btn = event.currentTarget;
-    btn.innerHTML = '<i class="bi bi-clipboard-check"></i> Copiado!';
-
-    setTimeout(() => {
-        btn.innerHTML = '<i class="bi bi-clipboard"></i> Copiar PIX';
-    }, 2000);
+    // Usa API moderna
+    navigator.clipboard.writeText(texto).then(() => {
+        btn.innerHTML = '<i class="bi bi-clipboard-check"></i> Copiado!';
+        setTimeout(() => {
+            btn.innerHTML = '<i class="bi bi-clipboard"></i> Copiar PIX';
+        }, 2000);
+    }).catch(err => {
+        console.error("Erro ao copiar:", err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Não foi possível copiar o PIX automaticamente.'
+        });
+    });
 }
+
 
