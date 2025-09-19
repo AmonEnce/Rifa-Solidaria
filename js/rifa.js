@@ -125,7 +125,7 @@ async function reservar() {
             numerosSelecionados.forEach(num => {
                 atualizacao[`numeros.${num}`] = {
                     status: "reservado",
-                    comprador: { nome, telefone },
+                    comprador: { nome, telefone, vendedor },
                     timestamp: new Date().toISOString()
                 };
             });
@@ -190,3 +190,4 @@ function copiarPix() {
         btn.innerHTML = '<i class="bi bi-clipboard"></i> Copiar PIX';
     }, 2000);
 }
+
