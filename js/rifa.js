@@ -47,12 +47,29 @@ async function carregarNumeros() {
                     numerosSelecionados.push(i);
                     btn.classList.add("selected");
                 }
+                atualizarBotaoReserva();
             };
 
             container.appendChild(btn);
         }
     } catch (error) {
         console.error("Erro ao carregar números:", error);
+    }
+}
+
+const PRECO_POR_NUMERO = 10; // R$ 10,00 por número
+
+function atualizarBotaoReserva() {
+    const botao = document.querySelector("button.reservar");
+    const qtd = numerosSelecionados.length;
+    const total = qtd * PRECO_POR_NUMERO;
+
+    if (qtd === 0) {
+        botao.textContent = "Reservar Números Selecionados";
+    } else if (qtd === 1) {
+        botao.textContent = `Reservar 1 número - R$ ${total},00`;
+    } else {
+        botao.textContent = `Reservar ${qtd} números - R$ ${total},00`;
     }
 }
 
@@ -91,7 +108,7 @@ async function reservar() {
             text: 'Por favor, selecione um vendedor antes de continuar!',
             confirmButtonText: 'OK'
         });
-        
+
         return;
     }
 
@@ -135,13 +152,32 @@ async function reservar() {
 
         Swal.fire({
             icon: 'success',
-            title: 'Sucesso!',
-            text: "Números reservados com sucesso!",
-            confirmButtonText: 'Ok'
+            title: 'Reserva confirmada!',
+            html: `
+                    <p>✅ Você reservou <b>${numerosSelecionados.length}</b> número(s).</p>
+                    <p>💰 Valor total: <b>R$ ${(numerosSelecionados.length * 10).toFixed(2).replace('.', ',')}</b></p>
+                    <hr>
+                    <p><b>1️⃣ Pague via Pix (copia e cola):</b></p>
+                    <button  class="btn btn-info shadow-sm rounded-pill" onclick="copiarPix(this)" style="margin-top:5px;padding:10px;cursor:pointer;">
+                        📋 Copiar Pix
+                    </button>
+                    <hr>
+                    <p><b>2️⃣ Envie o comprovante do Pix no WhatsApp:</b></p>
+                    <a href="https://wa.me/554988945075" target="_blank" 
+                    style="display:inline-block;margin-top:5px;padding:8px 15px;background:#25D366;color:white;
+                            border-radius:10px;text-decoration:none;font-weight:bold;">
+                        📲 (49) 98894-5075
+                    </a>
+                `,
+            confirmButtonText: 'Entendi',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: true
         });
 
         numerosSelecionados = [];
         carregarNumeros();
+        atualizarBotaoReserva();
 
     } catch (error) {
         Swal.fire({
@@ -156,6 +192,7 @@ async function reservar() {
 }
 
 carregarNumeros();
+atualizarBotaoReserva();
 
 const telefoneInput = document.getElementById('telefone');
 
@@ -197,5 +234,4 @@ function copiarPix(btn) {
         });
     });
 }
-
 
