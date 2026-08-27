@@ -13,6 +13,13 @@
 
     <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- jsPDF AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -104,15 +111,29 @@
     <div class="container" id="adminDiv" style="display:none;">
         <h1>Painel Admin - Rifa Solidária</h1>
 
-        <!-- Filtro de status -->
-        <label for="statusFiltro">Filtrar por status:</label>
-        <select id="statusFiltro" onchange="carregarCompradores()">
-            <option value="reservado" selected>Reservados</option>
-            <option value="pago">Pagos</option>
-        </select>
-        <button class="btn btn-outline-primary btn-sm" onclick="carregarCompradores()">
-            <i class="bi bi-arrow-clockwise"></i> Recarregar
-        </button>
+       <div class="d-flex gap-2 align-items-center flex-wrap">
+
+            <div>
+                <label for="statusFiltro">Filtrar por status:</label>
+                <select id="statusFiltro" onchange="carregarCompradores()">
+                    <option value="reservado" selected>Reservados</option>
+                    <option value="pago">Pagos</option>
+                </select>
+            </div>
+        
+            <button class="btn btn-outline-primary btn-sm"
+                    onclick="carregarCompradores()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Recarregar
+            </button>
+        
+            <button class="btn btn-success btn-sm"
+                    onclick="abrirRelatorio()">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                Relatórios
+            </button>
+        
+        </div>
 
         <div class="container my-4">
             <div class="table-responsive">
