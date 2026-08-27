@@ -328,3 +328,594 @@ async function editarComprador(nome) {
 
     carregarCompradores();
 }
+
+async function obterDadosRelatorio() {
+
+    const docRef = db.collection("rifas").doc("rifaNumeros");
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+        throw new Error("Dados da rifa não encontrados.");
+    }
+
+    const numeros = docSnap.data().numeros;
+
+    const vendas = [];
+
+    Object.keys(numeros).forEach(numero => {
+
+        const item = numeros[numero];
+
+        // Relatório considera somente números pagos
+        if (
+            item.status !== "pago" ||
+            !item.comprador
+        ) {
+            return;
+        }
+
+        const comprador = item.comprador;
+
+        vendas.push({
+            vendedor: comprador.vendedor || "Não informado",
+            nome: comprador.nome || "Não informado",
+            telefone: comprador.telefone || "",
+            numero: numero,
+            timestamp: item.timestamp || null
+        });
+    });
+
+    // Agrupar os números da mesma compra
+    const comprasMap = {};
+
+    vendas.forEach(venda => {
+
+        // Agrupa por comprador + vendedor + timestamp
+        const timestamp = obterTimestampMillis(venda.timestamp);
+
+        const chave =
+            `${venda.vendedor}|${venda.nome}|${venda.telefone}|${timestamp}`;
+
+        if (!comprasMap[chave]) {
+
+            comprasMap[chave] = {
+                vendedor: venda.vendedor,
+                nome: venda.nome,
+                telefone: venda.telefone,
+                timestamp: venda.timestamp,
+                numeros: []
+            };
+        }
+
+        comprasMap[chave].numeros.push(venda.numero);
+    });
+
+    return Object.values(comprasMap)
+        .map(compra => {
+
+            compra.numeros.sort((a, b) => {
+                return Number(a) - Number(b);
+            });
+
+            compra.quantidade = compra.numeros.length;
+
+            // Valor atual da rifa
+            compra.valor = compra.quantidade * 10;
+
+            return compra;
+        })
+        .sort((a, b) => {
+
+            const vendedorCompare =
+                a.vendedor.localeCompare(b.vendedor);
+
+            if (vendedorCompare !== 0) {
+                return vendedorCompare;
+            }
+
+            return obterTimestampMillis(a.timestamp) -
+                obterTimestampMillis(b.timestamp);
+        });
+}
+
+
+function obterTimestampMillis(timestamp) {
+
+    if (!timestamp) {
+        return 0;
+    }
+
+    // Firebase Timestamp
+    if (typeof timestamp.toMillis === "function") {
+        return timestamp.toMillis();
+    }
+
+    // Firebase Timestamp convertido
+    if (typeof timestamp.toDate === "function") {
+        return timestamp.toDate().getTime();
+    }
+
+    // Número
+    if (typeof timestamp === "number") {
+        return timestamp;
+    }
+
+    // String / Date
+    const data = new Date(timestamp);
+
+    if (!isNaN(data.getTime())) {
+        return data.getTime();
+    }
+
+    return 0;
+}
+
+
+function formatarDataRelatorio(timestamp) {
+
+    const millis = obterTimestampMillis(timestamp);
+
+    if (!millis) {
+        return "";
+    }
+
+    const data = new Date(millis);
+
+    const dia = String(data.getDate()).padStart(2, "0");
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const ano = data.getFullYear();
+
+    const hora = String(data.getHours()).padStart(2, "0");
+    const minuto = String(data.getMinutes()).padStart(2, "0");
+
+    return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
+}
+
+
+function formatarMoeda(valor) {
+
+    return valor.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    });
+}
+
+async function abrirRelatorio() {
+
+    Swal.fire({
+        title: "Carregando relatório...",
+        text: "Aguarde.",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    try {
+
+        const vendas = await obterDadosRelatorio();
+
+        if (!vendas.length) {
+
+            Swal.fire({
+                icon: "info",
+                title: "Nenhuma venda encontrada",
+                text: "Não existem vendas pagas para gerar o relatório."
+            });
+
+            return;
+        }
+
+        const vendedores = [
+            ...new Set(vendas.map(x => x.vendedor))
+        ].sort();
+
+        let opcoesVendedor = `
+            <option value="">Todos os vendedores</option>
+        `;
+
+        vendedores.forEach(vendedor => {
+
+            opcoesVendedor += `
+                <option value="${escapeHtml(vendedor)}">
+                    ${escapeHtml(vendedor)}
+                </option>
+            `;
+        });
+
+        Swal.fire({
+            title: "Relatório de Vendas",
+            html: `
+                <div style="text-align:left;">
+
+                    <label style="font-weight:bold;">
+                        Vendedor
+                    </label>
+
+                    <select id="relatorioVendedor"
+                            class="swal2-select"
+                            style="width:100%; margin:10px 0 20px;">
+                        ${opcoesVendedor}
+                    </select>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        O relatório considera somente vendas com
+                        pagamento autorizado.
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-center mt-3">
+
+                        <button type="button"
+                                class="btn btn-danger"
+                                onclick="gerarRelatorioPDF()">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            Gerar PDF
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-success"
+                                onclick="gerarRelatorioCSV()">
+                            <i class="bi bi-filetype-csv"></i>
+                            Gerar CSV
+                        </button>
+
+                    </div>
+
+                </div>
+            `,
+            showConfirmButton: false,
+            showCloseButton: true,
+            width: 500
+        });
+
+    } catch (error) {
+
+        Swal.fire({
+            icon: "error",
+            title: "Erro",
+            text: error.message
+        });
+    }
+}
+
+async function gerarRelatorioPDF() {
+
+    try {
+
+        const vendas = await obterDadosRelatorio();
+
+        const vendedorSelecionado =
+            document.getElementById("relatorioVendedor")?.value || "";
+
+        const vendasFiltradas = vendedorSelecionado
+            ? vendas.filter(x => x.vendedor === vendedorSelecionado)
+            : vendas;
+
+        if (!vendasFiltradas.length) {
+
+            Swal.fire({
+                icon: "info",
+                title: "Nenhuma venda",
+                text: "Não existem vendas para o vendedor selecionado."
+            });
+
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+
+        const doc = new jsPDF("landscape");
+
+        const vendedores = [
+            ...new Set(vendasFiltradas.map(x => x.vendedor))
+        ].sort();
+
+        let posY = 20;
+
+        // Título
+        doc.setFontSize(18);
+        doc.text("Relatório de Vendas - Rifa Solidária", 14, posY);
+
+        posY += 8;
+
+        doc.setFontSize(10);
+
+        doc.text(
+            `Gerado em: ${formatarDataRelatorio(new Date())}`,
+            14,
+            posY
+        );
+
+        posY += 10;
+
+        let totalGeral = 0;
+        let quantidadeGeral = 0;
+
+        vendedores.forEach((vendedor, index) => {
+
+            const vendasVendedor =
+                vendasFiltradas.filter(x =>
+                    x.vendedor === vendedor
+                );
+
+            const totalVendedor =
+                vendasVendedor.reduce(
+                    (total, venda) => total + venda.valor,
+                    0
+                );
+
+            const quantidadeNumeros =
+                vendasVendedor.reduce(
+                    (total, venda) =>
+                        total + venda.quantidade,
+                    0
+                );
+
+            totalGeral += totalVendedor;
+            quantidadeGeral += quantidadeNumeros;
+
+            // Evita quebrar o cabeçalho do vendedor
+            if (posY > 170) {
+                doc.addPage();
+                posY = 20;
+            }
+
+            doc.setFontSize(14);
+            doc.setFont(undefined, "bold");
+
+            doc.text(
+                `Vendedor: ${vendedor}`,
+                14,
+                posY
+            );
+
+            posY += 7;
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, "normal");
+
+            doc.text(
+                `Total de números: ${quantidadeNumeros}`,
+                14,
+                posY
+            );
+
+            doc.text(
+                `Total vendido: ${formatarMoeda(totalVendedor)}`,
+                90,
+                posY
+            );
+
+            posY += 5;
+
+            const linhas = vendasVendedor.map(venda => [
+
+                venda.nome,
+
+                venda.telefone,
+
+                venda.numeros.join(", "),
+
+                venda.quantidade.toString(),
+
+                formatarMoeda(venda.valor),
+
+                formatarDataRelatorio(venda.timestamp)
+
+            ]);
+
+            doc.autoTable({
+
+                startY: posY,
+
+                head: [[
+                    "Comprador",
+                    "Telefone",
+                    "Números Comprados",
+                    "Qtd.",
+                    "Valor Pago",
+                    "Data/Hora"
+                ]],
+
+                body: linhas,
+
+                theme: "grid",
+
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 2
+                },
+
+                headStyles: {
+                    fontStyle: "bold"
+                },
+
+                columnStyles: {
+                    0: { cellWidth: 50 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 70 },
+                    3: { cellWidth: 15 },
+                    4: { cellWidth: 30 },
+                    5: { cellWidth: 40 }
+                },
+
+                margin: {
+                    left: 14,
+                    right: 14
+                }
+            });
+
+            posY = doc.lastAutoTable.finalY + 12;
+
+        });
+
+        // Resumo final
+        if (posY > 170) {
+            doc.addPage();
+            posY = 20;
+        }
+
+        doc.setFontSize(14);
+        doc.setFont(undefined, "bold");
+
+        doc.text(
+            "Resumo Geral",
+            14,
+            posY
+        );
+
+        posY += 8;
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+
+        doc.text(
+            `Total de números vendidos: ${quantidadeGeral}`,
+            14,
+            posY
+        );
+
+        doc.text(
+            `Valor total vendido: ${formatarMoeda(totalGeral)}`,
+            100,
+            posY
+        );
+
+        const dataArquivo =
+            new Date().toISOString().slice(0, 10);
+
+        doc.save(
+            `relatorio-vendas-${dataArquivo}.pdf`
+        );
+
+        Swal.close();
+
+    } catch (error) {
+
+        console.error(error);
+
+        Swal.fire({
+            icon: "error",
+            title: "Erro ao gerar PDF",
+            text: error.message
+        });
+    }
+}
+
+async function gerarRelatorioCSV() {
+
+    try {
+
+        const vendas = await obterDadosRelatorio();
+
+        const vendedorSelecionado =
+            document.getElementById("relatorioVendedor")?.value || "";
+
+        const vendasFiltradas = vendedorSelecionado
+            ? vendas.filter(x => x.vendedor === vendedorSelecionado)
+            : vendas;
+
+        if (!vendasFiltradas.length) {
+
+            Swal.fire({
+                icon: "info",
+                title: "Nenhuma venda",
+                text: "Não existem vendas para o vendedor selecionado."
+            });
+
+            return;
+        }
+
+        const linhas = [];
+
+        // Cabeçalho
+        linhas.push([
+            "Vendedor",
+            "Comprador",
+            "Telefone",
+            "Números Comprados",
+            "Quantidade",
+            "Valor Pago",
+            "Data/Hora"
+        ]);
+
+        vendasFiltradas.forEach(venda => {
+
+            linhas.push([
+                venda.vendedor,
+                venda.nome,
+                venda.telefone,
+                venda.numeros.join(", "),
+                venda.quantidade,
+                venda.valor.toFixed(2).replace(".", ","),
+                formatarDataRelatorio(venda.timestamp)
+            ]);
+
+        });
+
+        // Converter para CSV
+        const csv = linhas
+            .map(linha =>
+                linha
+                    .map(valor => {
+                        const texto = String(valor ?? "");
+
+                        // Escapa aspas
+                        return `"${texto.replace(/"/g, '""')}"`;
+                    })
+                    .join(";")
+            )
+            .join("\r\n");
+
+        // BOM para o Excel reconhecer UTF-8
+        const blob = new Blob(
+            ["\uFEFF" + csv],
+            {
+                type: "text/csv;charset=utf-8;"
+            }
+        );
+
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+
+        link.href = url;
+
+        const dataArquivo =
+            new Date().toISOString().slice(0, 10);
+
+        link.download =
+            `relatorio-vendas-${dataArquivo}.csv`;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+
+        Swal.close();
+
+    } catch (error) {
+
+        console.error(error);
+
+        Swal.fire({
+            icon: "error",
+            title: "Erro ao gerar CSV",
+            text: error.message
+        });
+    }
+}
+
+function escapeHtml(valor) {
+
+    return String(valor ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
